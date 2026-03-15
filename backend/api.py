@@ -19,7 +19,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from backend.chatbot import query, get_follow_up_suggestions
-from backend.embeddings import vector_store_exists
+from backend.embeddings import vector_store_exists, build_and_persist_vector_store
 
 app = FastAPI(
     title="GenAI GitLab Chatbot API",
@@ -37,12 +37,21 @@ app.add_middleware(
 
 
 @app.on_event("startup")
-def startup_log_vector_store():
-    """Log whether we are using an existing vector store (do not rebuild on startup)."""
+async def ensure_vector_store():
+    """If the vector store is missing, run ingestion once so the chatbot can answer immediately."""
     if vector_store_exists():
         print("Loading existing vector store...")
-    else:
-        print("Vector store not found. Run ingest + embeddings to populate, or use /ingest endpoint.")
+        return
+    print("Vector store not found. Running ingestion...")
+    from backend.ingest import run_ingestion
+    chunks = await run_ingestion(
+        chunk_size=1000,
+        chunk_overlap=200,
+        delay=1.0,
+        max_pages_per_site=200,
+    )
+    build_and_persist_vector_store(chunks)
+    print("Vector store created successfully.")
 
 
 # ----- Request/Response models -----
