@@ -1,3 +1,12 @@
+---
+title: GitLab Handbook Chatbot
+emoji: 🤖
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+---
+
 # GenAI GitLab Handbook Chatbot
 
 A production-ready **Retrieval Augmented Generation (RAG)** chatbot that answers questions using [GitLab's Handbook](https://about.gitlab.com/handbook/) and [Direction](https://about.gitlab.com/direction/) documentation. Built for employees and aspiring employees who want to quickly understand GitLab's processes, strategy, and culture.
