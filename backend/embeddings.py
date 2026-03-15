@@ -19,6 +19,24 @@ VECTOR_STORE_DIR = PROJECT_ROOT / "vector_store"
 VECTOR_STORE_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def vector_store_exists(collection_name: str = "gitlab_handbook") -> bool:
+    """
+    Check if the vector store already exists on disk.
+    If True, load it instead of rebuilding embeddings on startup.
+    """
+    persist_path = VECTOR_STORE_DIR
+    if not persist_path.exists():
+        return False
+    # Chroma persists as a directory with chroma.sqlite3 or similar
+    try:
+        contents = list(persist_path.iterdir())
+        return len(contents) > 0 and any(
+            p.is_dir() or p.suffix in (".sqlite3", ".bin") for p in contents
+        )
+    except OSError:
+        return False
+
+
 def get_embedding_function():
     """Return a LangChain-compatible embedding function based on config."""
     settings = get_settings()
@@ -47,8 +65,8 @@ def get_embedding_function():
 
 def get_vector_store(collection_name: str = "gitlab_handbook"):
     """
-    Get or create ChromaDB vector store with the configured embeddings.
-    Persists to vector_store/ directory.
+    Get ChromaDB vector store from disk. Loads existing store if present;
+    does not rebuild embeddings on startup.
     """
     from langchain_community.vectorstores import Chroma
 
@@ -97,10 +115,14 @@ def build_and_persist_vector_store(chunks: list[dict[str, Any]]) -> None:
 if __name__ == "__main__":
     from backend.ingest import load_processed_chunks
 
+    if vector_store_exists():
+        print("Vector store already exists. Skipping rebuild. Delete vector_store/ to recreate.")
+        sys.exit(0)
+
     chunks = load_processed_chunks()
     if not chunks:
         print("No processed chunks found. Run ingest.py first.")
-    else:
-        print(f"Building vector store from {len(chunks)} chunks...")
-        build_and_persist_vector_store(chunks)
-        print("Done.")
+        sys.exit(1)
+    print(f"Building vector store from {len(chunks)} chunks...")
+    build_and_persist_vector_store(chunks)
+    print("Done.")

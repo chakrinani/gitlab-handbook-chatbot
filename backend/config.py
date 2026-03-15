@@ -62,9 +62,9 @@ class Settings(BaseSettings):
     scrape_delay_seconds: float = Field(default=1.0, env="SCRAPE_DELAY_SECONDS")
     request_timeout: int = Field(default=30, env="REQUEST_TIMEOUT")
 
-    # API
+    # API (default 7860 for Hugging Face Spaces; set API_PORT=8000 for local)
     api_host: str = Field(default="0.0.0.0", env="API_HOST")
-    api_port: int = Field(default=8000, env="API_PORT")
+    api_port: int = Field(default=7860, env="API_PORT")
 
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE) if _ENV_FILE.exists() else None,

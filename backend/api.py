@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from backend.chatbot import query, get_follow_up_suggestions
+from backend.embeddings import vector_store_exists
 
 app = FastAPI(
     title="GenAI GitLab Chatbot API",
@@ -31,6 +32,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+def startup_log_vector_store():
+    """Log whether we are using an existing vector store (do not rebuild on startup)."""
+    if vector_store_exists():
+        print("Loading existing vector store...")
+    else:
+        print("Vector store not found. Run ingest + embeddings to populate, or use /ingest endpoint.")
 
 
 # ----- Request/Response models -----

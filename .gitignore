@@ -1,7 +1,7 @@
 # Python
+__pycache__/
 .venv/
 venv/
-__pycache__/
 *.py[cod]
 *.egg-info/
 .eggs/
@@ -10,14 +10,14 @@ build/
 .env
 *.log
 
-# Data and vector store (optional: commit a pre-built store for demo)
-# data/processed_docs/
-# vector_store/
-
 # Node / Frontend
 node_modules/
 frontend/dist/
 frontend/.env
+
+# Data and vector store (do not push; rebuild on deploy or use volume)
+vector_store/
+data/processed_docs/chunks.jsonl
 
 # IDE
 .idea/
@@ -31,5 +31,3 @@ Thumbs.db
 
 # ChromaDB
 chroma.sqlite3
-
-vector_store/
