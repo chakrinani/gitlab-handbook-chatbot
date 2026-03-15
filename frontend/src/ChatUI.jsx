@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ChatUI.css';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
+// In dev, use /api so Vite proxy forwards to backend; in production (e.g. HF Spaces), use '' so we hit POST /chat on same origin
+const API_BASE = import.meta.env.VITE_API_URL !== undefined && import.meta.env.VITE_API_URL !== ''
+  ? import.meta.env.VITE_API_URL
+  : (import.meta.env.DEV ? '/api' : '');
 
 /** Strip <think>...</think> blocks so internal reasoning is never shown (safety net if backend misses any). */
 function cleanResponse(text) {
@@ -49,7 +52,8 @@ function ChatUI() {
 
     try {
       const history = messages.map((m) => ({ role: m.role, content: m.content }));
-      const res = await fetch(`${API_BASE}/chat`, {
+      const chatUrl = `${API_BASE}/chat`.replace(/\/+/g, '/'); // avoid double slashes when API_BASE is ''
+      const res = await fetch(chatUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: trimmed, history }),
