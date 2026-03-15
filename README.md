@@ -190,6 +190,20 @@ npm run dev
 
 Open **http://localhost:5173**. The Vite dev server proxies `/api` to `http://localhost:8000`.
 
+### 6. Serve frontend from FastAPI (single server)
+
+To serve the React UI from the same process as the API (e.g. for Docker or Hugging Face Spaces):
+
+```bash
+cd frontend
+npm run build
+cd ..
+# Backend will serve frontend/dist when present
+uvicorn backend.api:app --reload --host 0.0.0.0 --port 8000
+```
+
+Open **http://localhost:8000** for the chat UI. Build the frontend with `VITE_API_URL=` (empty) so the app calls `/chat` on the same origin.
+
 ---
 
 ## How to Run Locally

@@ -14,6 +14,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from backend.chatbot import query, get_follow_up_suggestions
@@ -98,15 +100,36 @@ def is_likely_off_topic(message: str) -> bool:
     return has_off and not has_gitlab
 
 
+# Serve frontend from FastAPI when frontend/dist exists (e.g. Docker / Hugging Face Spaces).
+# Build frontend with: cd frontend && npm run build
+# For same-origin API calls, build with VITE_API_URL= (empty) so the app calls /chat, not /api/chat.
+frontend_path = PROJECT_ROOT / "frontend" / "dist"
+_frontend_available = frontend_path.exists() and (frontend_path / "index.html").exists()
+
+if _frontend_available:
+    assets_dir = frontend_path / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+
+
 @app.get("/")
-def root():
-    """Root path: point users to the chat UI and API docs."""
+def serve_frontend():
+    """Serve React UI from frontend/dist, or API info if frontend not built."""
+    if _frontend_available:
+        return FileResponse(str(frontend_path / "index.html"))
     return {
         "service": "GenAI GitLab Chatbot API",
         "docs": "/docs",
         "health": "/health",
-        "chat_ui": "Open the frontend at http://localhost:5173 (or 5174) to use the chatbot.",
+        "chat_ui": "Build frontend (npm run build) and restart to serve UI from this server.",
     }
+
+
+# SPA fallback: serve index.html for unmatched GET paths so client-side routing works
+if _frontend_available:
+    @app.get("/{full_path:path}")
+    def serve_frontend_spa(full_path: str):
+        return FileResponse(str(frontend_path / "index.html"))
 
 
 @app.get("/health")
