@@ -5,10 +5,14 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true,   // external access (e.g. Hugging Face Spaces)
-    port: 7860,   // HF Spaces app_port; for local dev with backend on 8000, use port 5173 and target 8000
+    port: 7860,   // HF Spaces app_port; for local dev use port 5173 and backend on 8000
     proxy: {
+      '/chat': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
       '/api': {
-        target: 'http://localhost:7860',
+        target: 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },

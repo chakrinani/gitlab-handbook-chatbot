@@ -1,11 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ChatUI.css';
 
-// In dev, use /api so Vite proxy forwards to backend; in production (e.g. HF Spaces), use '' so we hit POST /chat on same origin
-const API_BASE = import.meta.env.VITE_API_URL !== undefined && import.meta.env.VITE_API_URL !== ''
-  ? import.meta.env.VITE_API_URL
-  : (import.meta.env.DEV ? '/api' : '');
-
 /** Strip <think>...</think> blocks so internal reasoning is never shown (safety net if backend misses any). */
 function cleanResponse(text) {
   if (!text || typeof text !== 'string') return text;
@@ -51,20 +46,24 @@ function ChatUI() {
     setLoading(true);
 
     try {
-      const history = messages.map((m) => ({ role: m.role, content: m.content }));
-      const chatUrl = `${API_BASE}/chat`.replace(/\/+/g, '/'); // avoid double slashes when API_BASE is ''
-      const res = await fetch(chatUrl, {
+      const chatHistory = messages.map((m) => ({ role: m.role, content: m.content }));
+      const response = await fetch('/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed, history }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: trimmed,
+          history: chatHistory,
+        }),
       });
 
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error(errBody.detail || `Request failed: ${res.status}`);
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        throw new Error(errBody.detail || `Request failed: ${response.status}`);
       }
 
-      const data = await res.json();
+      const data = await response.json();
       const answer = cleanResponse(data.answer ?? '');
       setMessages((prev) => [...prev, { role: 'assistant', content: answer }]);
       setSources(data.sources || []);
