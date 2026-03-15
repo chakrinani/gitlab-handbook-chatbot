@@ -47,10 +47,11 @@ function ChatUI() {
 
     try {
       const chatHistory = messages.map((m) => ({ role: m.role, content: m.content }));
-      const response = await fetch('/chat', {
-        method: 'POST',
+      // Must use POST /chat to match FastAPI @app.post("/chat") — avoids 405 Method Not Allowed
+      const response = await fetch("/chat", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           message: trimmed,
